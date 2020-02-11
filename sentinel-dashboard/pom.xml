@@ -109,7 +109,6 @@
             <groupId>com.ctrip.framework.apollo</groupId>
             <artifactId>apollo-openapi</artifactId>
             <version>1.2.0</version>
-            <scope>test</scope>
         </dependency>
 
         <!--for Zookeeper rule publisher sample-->
@@ -135,6 +134,11 @@
         	<artifactId>system-rules</artifactId>
         	<version>1.16.1</version>
         	<scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.8</version>
         </dependency>
     </dependencies>
 
