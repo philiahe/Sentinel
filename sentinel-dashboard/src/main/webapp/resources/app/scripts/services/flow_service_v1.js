@@ -14,6 +14,19 @@ app.service('FlowServiceV1', ['$http', function ($http) {
         });
     };
 
+    this.refreshRule = function (app, ip, port) {
+        var param = {
+            app: app,
+            ip: ip,
+            port: port
+        };
+        return $http({
+            url: '/v1/flow/refreshRule',
+            params: param,
+            method: 'POST'
+        });
+    };
+
     this.newRule = function (rule) {
         var param = {
             resource: rule.resource,

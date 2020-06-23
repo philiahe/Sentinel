@@ -105,6 +105,23 @@ app.controller('FlowControllerV1', ['$scope', '$stateParams', 'FlowServiceV1', '
       });
     };
 
+    $scope.refreshRule = function () {
+      if (!$scope.macInputModel) {
+        return;
+      }
+      var mac = $scope.macInputModel.split(':');
+      FlowService.refreshRule($scope.app, mac[0], mac[1]).success(
+          function (data) {
+            if (data.code == 0 && data.data) {
+              $scope.rules = data.data;
+              $scope.rulesPageConfig.totalCount = $scope.rules.length;
+            } else {
+              $scope.rules = [];
+              $scope.rulesPageConfig.totalCount = 0;
+            }
+          });
+    };
+
     $scope.saveRule = function () {
       if (!FlowService.checkRuleValid($scope.currentRule)) {
         return;

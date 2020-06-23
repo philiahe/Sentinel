@@ -18,6 +18,7 @@ package com.alibaba.csp.sentinel.dashboard.controller;
 import com.alibaba.csp.sentinel.dashboard.auth.AuthAction;
 import com.alibaba.csp.sentinel.dashboard.auth.AuthService.PrivilegeType;
 import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.FlowRuleEntity;
+import com.alibaba.csp.sentinel.dashboard.discovery.AppManagement;
 import com.alibaba.csp.sentinel.dashboard.domain.Result;
 import com.alibaba.csp.sentinel.dashboard.repository.rule.InMemoryRuleRepositoryAdapter;
 import com.alibaba.csp.sentinel.dashboard.rule.DynamicRuleProvider;
@@ -25,13 +26,17 @@ import com.alibaba.csp.sentinel.dashboard.rule.DynamicRulePublisher;
 import com.alibaba.csp.sentinel.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Flow rule controller.
@@ -53,6 +58,8 @@ public class FlowControllerV1 {
     @Autowired
     @Qualifier("flowRuleApolloPublisher")
     private DynamicRulePublisher<List<FlowRuleEntity>> rulePublisher;
+    @Autowired
+    private AppManagement appManagement;
 
     @GetMapping("/rules")
     @AuthAction(PrivilegeType.READ_RULE)
@@ -65,6 +72,53 @@ public class FlowControllerV1 {
         try {
             List<FlowRuleEntity> rules = ruleProvider.getRules(app);
             rules = repository.saveAll(rules);
+            rules = rules.stream()
+                    .filter(p -> p.getPort().equals(port) && p.getIp().equals(ip))
+                    .collect(Collectors.toList());
+            return Result.ofSuccess(rules);
+        } catch (Throwable throwable) {
+            logger.error("Error when querying flow rules", throwable);
+            return Result.ofThrowable(-1, throwable);
+        }
+    }
+
+    @PostMapping("/refreshRule")
+    @AuthAction(PrivilegeType.WRITE_RULE)
+    public Result<List<FlowRuleEntity>> refreshRule(@RequestParam String app,
+                                                             @RequestParam String ip,
+                                                             @RequestParam Integer port) {
+        if (StringUtil.isEmpty(app)) {
+            return Result.ofFail(-1, "app can't be null or empty");
+        }
+        try {
+            List<FlowRuleEntity> rules = repository.findByApp(app, ip, port);
+            if (rules.size() == 0) {
+                return Result.ofFail(-1, "rules can't be null or empty");
+            }
+
+            List<FlowRuleEntity> allRules = new ArrayList<>(rules);
+            appManagement.getDetailApp(app).getMachines().forEach(p -> {
+                if (p.getIp().equals(ip) && p.getPort().equals(port)) {
+
+                } else {
+                    // 生成其他服务器的配置
+                    List<FlowRuleEntity> tempRules = new ArrayList<>();
+                    rules.forEach(x -> {
+                        FlowRuleEntity rule = new FlowRuleEntity();
+                        BeanUtils.copyProperties(x, rule);
+                        tempRules.add(rule);
+                    });
+                    tempRules.forEach(m -> {
+                        m.setId(null);
+                        m.setIp(p.getIp());
+                        m.setPort(p.getPort());
+                        m.setGmtModified(new Date());
+                    });
+                    allRules.addAll(tempRules);
+                }
+            });
+            repository.saveAll(allRules);
+            publishRules(app);
             return Result.ofSuccess(rules);
         } catch (Throwable throwable) {
             logger.error("Error when querying flow rules", throwable);
@@ -86,7 +140,27 @@ public class FlowControllerV1 {
         entity.setLimitApp(entity.getLimitApp().trim());
         entity.setResource(entity.getResource().trim());
         try {
-            entity = repository.save(entity);
+            AtomicBoolean isExists = new AtomicBoolean(false);
+            List<FlowRuleEntity> entities = ruleProvider.getRules(entity.getApp());
+
+            entities.forEach(p ->
+            {
+                if (p.getResource().equals(entity.getResource())
+                        && p.getIp().equals(entity.getIp())
+                        && p.getPort().equals(entity.getPort())
+                        && p.getApp().equals(entity.getApp())) {
+                    entity.setId(p.getId());
+                    entity.setGmtCreate(p.getGmtCreate());
+                    BeanUtils.copyProperties(entity, p);
+
+                    isExists.set(true);
+                }
+            });
+            if (!isExists.get()) {
+                entities.add(entity);
+            }
+
+            repository.saveAll(entities);
             publishRules(entity.getApp());
             return Result.ofSuccess(entity);
         } catch (Throwable t) {

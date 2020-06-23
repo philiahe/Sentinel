@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.RuleEntity;
 import com.alibaba.csp.sentinel.dashboard.discovery.MachineInfo;
@@ -108,6 +109,14 @@ public abstract class InMemoryRuleRepositoryAdapter<T extends RuleEntity> implem
             return new ArrayList<>();
         }
         return new ArrayList<>(entities.values());
+    }
+
+    public List<T> findByApp(String appName, String ip, Integer port) {
+        List<T> rules = findAllByApp(appName);
+        rules = rules.stream()
+                .filter(p -> p.getPort().equals(port) && p.getIp().equals(ip))
+                .collect(Collectors.toList());
+        return rules;
     }
 
     public void clearAll() {
