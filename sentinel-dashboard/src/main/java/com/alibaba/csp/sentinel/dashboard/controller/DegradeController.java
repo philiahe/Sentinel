@@ -48,10 +48,10 @@ public class DegradeController {
     @Autowired
     private InMemoryRuleRepositoryAdapter<DegradeRuleEntity> repository;
     @Autowired
-    @Qualifier("degradeRuleApolloProvider")
+    @Qualifier("degradeRuleNacosProvider")
     private DynamicRuleProvider<List<DegradeRuleEntity>> ruleProvider;
     @Autowired
-    @Qualifier("degradeRuleApolloPublisher")
+    @Qualifier("degradeRuleNacosPublisher")
     private DynamicRulePublisher<List<DegradeRuleEntity>> rulePublisher;
 
     @ResponseBody

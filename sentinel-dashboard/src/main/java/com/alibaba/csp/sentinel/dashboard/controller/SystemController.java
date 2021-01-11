@@ -46,10 +46,10 @@ public class SystemController {
     @Autowired
     private RuleRepository<SystemRuleEntity, Long> repository;
     @Autowired
-    @Qualifier("systemRuleApolloProvider")
+    @Qualifier("systemRuleNacosProvider")
     private DynamicRuleProvider<List<SystemRuleEntity>> ruleProvider;
     @Autowired
-    @Qualifier("systemRuleApolloPublisher")
+    @Qualifier("systemRuleNacosPublisher")
     private DynamicRulePublisher<List<SystemRuleEntity>> rulePublisher;
 
     @GetMapping("/rules.json")

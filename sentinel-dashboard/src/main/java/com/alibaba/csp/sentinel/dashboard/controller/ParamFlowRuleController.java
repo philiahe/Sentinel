@@ -55,10 +55,10 @@ public class ParamFlowRuleController {
     @Autowired
     private RuleRepository<ParamFlowRuleEntity, Long> repository;
     @Autowired
-    @Qualifier("paramFlowRuleApolloProvider")
+    @Qualifier("paramFlowRuleNacosProvider")
     private DynamicRuleProvider<List<ParamFlowRuleEntity>> ruleProvider;
     @Autowired
-    @Qualifier("paramFlowRuleApolloPublisher")
+    @Qualifier("paramFlowRuleNacosPublisher")
     private DynamicRulePublisher<List<ParamFlowRuleEntity>> rulePublisher;
 
     @GetMapping("/rules")

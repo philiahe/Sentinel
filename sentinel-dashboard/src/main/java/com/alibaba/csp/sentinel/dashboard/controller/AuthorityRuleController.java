@@ -46,10 +46,10 @@ public class AuthorityRuleController {
     @Autowired
     private RuleRepository<AuthorityRuleEntity, Long> repository;
     @Autowired
-    @Qualifier("authorityRuleApolloProvider")
+    @Qualifier("authorityRuleNacosProvider")
     private DynamicRuleProvider<List<AuthorityRuleEntity>> ruleProvider;
     @Autowired
-    @Qualifier("authorityRuleApolloPublisher")
+    @Qualifier("authorityRuleNacosPublisher")
     private DynamicRulePublisher<List<AuthorityRuleEntity>> rulePublisher;
 
     @GetMapping("/rules")
